@@ -59,6 +59,7 @@ type ClientHandler interface {
 type client struct {
 	packager    Packager
 	transporter Transporter
+	sendIndex   uint16
 }
 
 // NewClient creates a new s7 client with given backend handler.
@@ -172,7 +173,7 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 	// Calc Word size
 	wordSize = dataSizeByte(wordLen)
 	if wordSize == 0 {
-		return fmt.Errorf(ErrorText(errIsoInvalidDataSize))
+		return ErrIsoInvalidDataSize
 	}
 
 	if wordLen == s7wlbit {
@@ -199,6 +200,13 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 		// Setup the telegram
 		requestData := make([]byte, sizeHeaderRead)
 		copy(requestData[0:], s7ReadWriteTelegram[0:])
+		// sendidx
+		if mb.sendIndex == 0x7FFF {
+			mb.sendIndex = 1
+		} else {
+			mb.sendIndex++
+		}
+		binary.BigEndian.PutUint16(requestData[11:], uint16(mb.sendIndex))
 		request := NewProtocolDataUnit(requestData)
 		// Set DB Number
 		request.Data[27] = byte(area)
@@ -230,14 +238,20 @@ func (mb *client) readArea(area int, dbNumber int, start int, amount int, wordLe
 
 		if err == nil {
 			if size := len(response.Data); size < 25 {
-				err = fmt.Errorf(ErrorText(errIsoInvalidDataSize)+"'%v'", len(response.Data))
+				err = ErrIsoInvalidDataSize //fmt.Errorf(ErrorText(errIsoInvalidDataSize)+"'%v'", len(response.Data))
 			} else {
+
 				if response.Data[21] != 0xFF {
-					err = fmt.Errorf(ErrorText(CPUError(uint(response.Data[21]))))
+					err = CPUError(uint(response.Data[21]))//fmt.Errorf(ErrorText(CPUError(uint(response.Data[21]))))
 				} else {
-					//copy response to buffer
-					copy(buffer[offset:offset+sizeRequested], response.Data[25:25+sizeRequested])
-					offset += sizeRequested
+					sendIndex := binary.BigEndian.Uint16(response.Data[11:])
+					if sendIndex != mb.sendIndex {
+						err = ErrCliInvalidPlcAnswer
+					} else {
+						//copy response to buffer
+						copy(buffer[offset:offset+sizeRequested], response.Data[25:25+sizeRequested])
+						offset += sizeRequested
+					}
 				}
 			}
 
@@ -271,7 +285,7 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 	// Calc Word size
 	wordSize = dataSizeByte(wordlen)
 	if wordSize == 0 {
-		return fmt.Errorf(ErrorText(errIsoInvalidDataSize))
+		return ErrIsoInvalidDataSize // fmt.Errorf(ErrorText(errIsoInvalidDataSize))
 	}
 
 	if wordlen == s7wlbit {
@@ -297,6 +311,13 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 		// Setup the telegram
 		requestData := make([]byte, sizeHeaderWrite)
 		copy(requestData[0:], s7ReadWriteTelegram[0:])
+		// sendidx
+		if mb.sendIndex == 0x7FFF {
+			mb.sendIndex = 1
+		} else {
+			mb.sendIndex++
+		}
+		binary.BigEndian.PutUint16(requestData[11:], uint16(mb.sendIndex))
 
 		request := NewProtocolDataUnit(requestData)
 		// Whole telegram Size
@@ -359,9 +380,14 @@ func (mb *client) writeArea(area int, dbnumber int, start int, amount int, wordl
 			if length = len(response.Data); length == 22 {
 				if response.Data[21] != byte(0xFF) {
 					err = fmt.Errorf(ErrorText(CPUError(uint(response.Data[21]))))
+				} else {
+					sendIndex := binary.BigEndian.Uint16(response.Data[11:])
+					if sendIndex != mb.sendIndex {
+						err = ErrCliInvalidPlcAnswer
+					}
 				}
 			} else {
-				err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+				err = ErrIsoInvalidPDU//fmt.Errorf(ErrorText(errIsoInvalidPDU))
 			}
 
 		}
@@ -474,7 +500,7 @@ func (mb *client) send(request *ProtocolDataUnit) (response *ProtocolDataUnit, e
 	if err = mb.packager.Verify(request.Data, dataResponse); err != nil {
 		return
 	}
-	if dataResponse == nil || len(dataResponse) == 0 {
+	if len(dataResponse) == 0 {
 		// Empty response
 		err = fmt.Errorf("s7: response data is empty")
 		return

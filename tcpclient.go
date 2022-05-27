@@ -218,7 +218,7 @@ func (mb *tcpTransporter) isoConnect() error {
 			err = fmt.Errorf("errIsoConnect")
 		}
 	} else {
-		err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+		err = ErrIsoInvalidPDU
 	}
 	return err
 }
@@ -234,10 +234,10 @@ func (mb *tcpTransporter) negotiatePduLength() error {
 		// Get PDU Size Negotiated
 		mb.PDULength = int(binary.BigEndian.Uint16(response[25:]))
 		if mb.PDULength <= 0 {
-			err = fmt.Errorf(ErrorText(errCliNegotiatingPDU))
+			err = ErrCliNegotiatingPDU
 		}
 	} else {
-		err = fmt.Errorf(ErrorText(errCliNegotiatingPDU))
+		err = ErrCliNegotiatingPDU
 	}
 	return err
 }

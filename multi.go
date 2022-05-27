@@ -23,7 +23,7 @@ type S7DataItem struct {
 func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err error) {
 	// Checks items
 	if itemsCount > 20 { //max variable is 20
-		err = fmt.Errorf(ErrorText(errCliTooManyItems))
+		err = ErrCliTooManyItems
 		return
 	}
 	//fills header
@@ -98,7 +98,7 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 	tt, _ := interface{}(mb.transporter).(*TCPClientHandler)
 	//Checks the size
 	if offset > tt.PDULength {
-		err = fmt.Errorf(ErrorText(errCliSizeOverPDU))
+		err = ErrCliSizeOverPDU
 		return
 	}
 	binary.BigEndian.PutUint16(s7Multi[2:], uint16(offset))      // Whole size
@@ -116,7 +116,7 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 			return
 		}
 		if itemsWritten := int(response.Data[20]); itemsWritten != itemsCount || itemsWritten > 20 { //max var = 20
-			err = fmt.Errorf(ErrorText(errCliInvalidPlcAnswer))
+			err = ErrCliInvalidPlcAnswer
 			return
 		}
 		for i := 0; i < itemsCount; i++ {
@@ -135,7 +135,7 @@ func (mb *client) AGWriteMulti(dataItems []S7DataItem, itemsCount int) (err erro
 func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error) {
 	// Checks items
 	if itemsCount > 20 { //max variable is 20
-		err = fmt.Errorf(ErrorText(errCliTooManyItems))
+		err = ErrCliTooManyItems
 		return
 	}
 	s7Item := make([]byte, 12)
@@ -175,7 +175,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 	}
 	tt, _ := interface{}(mb.transporter).(*TCPClientHandler)
 	if offset > tt.PDULength {
-		err = fmt.Errorf(ErrorText(errCliSizeOverPDU))
+		err = ErrCliSizeOverPDU
 		return
 	}
 	binary.BigEndian.PutUint16(s7Multi[2:], uint16(offset)) // Whole size
@@ -188,7 +188,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 	// Check ISO Length
 	resLength := len(response.Data)
 	if resLength < 22 {
-		err = fmt.Errorf(ErrorText(errIsoInvalidPDU)) // PDU too Small
+		err = ErrIsoInvalidPDU
 		return
 	}
 	// Check Global Operation Result
@@ -201,7 +201,7 @@ func (mb *client) AGReadMulti(dataItems []S7DataItem, itemsCount int) (err error
 	itemsRead := int(response.Data[20])
 	s7ItemRead := make([]byte, 1024)
 	if itemsRead != itemsCount || itemsRead > 20 { //max var
-		err = fmt.Errorf(ErrorText(errCliInvalidPlcAnswer))
+		err = ErrCliInvalidPlcAnswer
 		return
 	}
 	// Get Data

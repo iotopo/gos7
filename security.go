@@ -67,7 +67,7 @@ func verifySecurityResponse(response []byte) (err error) {
 			err = fmt.Errorf(ErrorText(CPUError(uint(result))))
 		}
 	} else {
-		err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+		err = ErrIsoInvalidPDU
 	}
 	return err
 }

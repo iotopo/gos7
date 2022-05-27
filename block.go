@@ -54,7 +54,7 @@ func (mb *client) DBGet(dbnumber int, usrdata []byte, size int) (err error) {
 				size = dbSize
 			}
 		} else {
-			err = fmt.Errorf(ErrorText(errCliBufferTooSmall))
+			err = ErrCliBufferTooSmall
 		}
 	}
 	return
@@ -104,7 +104,7 @@ func (mb *client) GetAgBlockInfo(blocktype int, blocknum int) (info S7BlockInfo,
 			}
 
 		} else {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 		}
 	}
 	return

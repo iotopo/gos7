@@ -18,16 +18,16 @@ func (mb *client) PLCHotStart() error {
 	if err == nil {
 		if length := len(response.Data); length > 18 { // 18 is the minimum expected
 			if int(response.Data[19]) != pduStart {
-				err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
+				err = ErrCliCannotStartPLC
 			} else {
 				if int(response.Data[20]) == pduAlreadyStarted {
-					err = fmt.Errorf(ErrorText(errCliAlreadyRun))
+					err = ErrCliAlreadyRun
 				} else {
-					err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
+					err = ErrCliCannotStartPLC
 				}
 			}
 		} else {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 		}
 	}
 	return err
@@ -43,16 +43,16 @@ func (mb *client) PLCColdStart() error {
 	if err == nil {
 		if length := len(response.Data); length > 18 { // 18 is the minimum expected
 			if int(response.Data[19]) != pduStart {
-				err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
+				err = ErrCliCannotStartPLC
 			} else {
 				if int(response.Data[20]) == pduAlreadyStarted {
-					err = fmt.Errorf(ErrorText(errCliAlreadyRun))
+					err = ErrCliAlreadyRun
 				} else {
-					err = fmt.Errorf(ErrorText(errCliCannotStartPLC))
+					err = ErrCliCannotStartPLC
 				}
 			}
 		} else {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 		}
 	}
 	return err
@@ -67,16 +67,16 @@ func (mb *client) PLCStop() error {
 	if err == nil {
 		if length := len(response.Data); length > 18 { // 18 is the minimum expected
 			if int(response.Data[19]) != pduStop {
-				err = fmt.Errorf(ErrorText(errCliCannotStopPLC))
+				err = ErrCliCannotStopPLC
 			} else {
 				if int(response.Data[20]) == pduAlreadyStarted {
-					err = fmt.Errorf(ErrorText(errCliAlreadyStop))
+					err = ErrCliAlreadyStop
 				} else {
-					err = fmt.Errorf(ErrorText(errCliCannotStopPLC))
+					err = ErrCliCannotStopPLC
 				}
 			}
 		} else {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 		}
 	}
 	return err
@@ -106,7 +106,7 @@ func (mb *client) PLCGetStatus() (status int, err error) {
 				err = fmt.Errorf(ErrorText(CPUError(uint(result))))
 			}
 		} else {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 		}
 	}
 	return
