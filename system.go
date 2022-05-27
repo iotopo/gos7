@@ -5,7 +5,6 @@ package gos7
 // of the BSD license. See the LICENSE file for details.
 import (
 	"encoding/binary"
-	"fmt"
 	"strings"
 )
 
@@ -139,11 +138,11 @@ func (mb *client) readSzl(id int, index int) (szl S7SZL, size int, err error) {
 			return
 		}
 		if length := len(res.Data); length <= 32 {
-			err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+			err = ErrIsoInvalidPDU
 			return
 		}
 		if binary.BigEndian.Uint16(res.Data[27:]) != 0 && res.Data[29] != byte(0xFF) {
-			err = fmt.Errorf(ErrorText(errCliInvalidPlcAnswer))
+			err = ErrCliInvalidPlcAnswer
 			return
 		}
 		if first {

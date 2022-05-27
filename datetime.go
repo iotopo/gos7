@@ -5,7 +5,6 @@ package gos7
 // of the BSD license. See the LICENSE file for details.
 import (
 	"encoding/binary"
-	"fmt"
 	"time"
 )
 
@@ -21,11 +20,11 @@ func (mb *client) PGClockWrite() (datetime time.Time, err error) {
 			var s7 Helper
 			datetime = s7.GetDateTimeAt(response.Data, 35)
 		} else {
-			err = fmt.Errorf(ErrorText(errCliInvalidPlcAnswer))
+			err = ErrCliInvalidPlcAnswer
 		}
 
 	} else {
-		err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+		err = ErrIsoInvalidPDU
 	}
 	return
 }
@@ -42,10 +41,10 @@ func (mb *client) PGClockRead(datetime time.Time) (err error) {
 	response, err := mb.send(&request)
 	if length := len(response.Data); length > 30 {
 		if binary.BigEndian.Uint16(response.Data[27:]) != 0 {
-			err = fmt.Errorf(ErrorText(errCliInvalidPlcAnswer))
+			err = ErrCliInvalidPlcAnswer
 		}
 	} else {
-		err = fmt.Errorf(ErrorText(errIsoInvalidPDU))
+		err = ErrIsoInvalidPDU
 	}
 	return
 }

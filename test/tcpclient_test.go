@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"../../gos7"
-	"sync"
 	"fmt"
+	"sync"
+
+	"github.com/iotopo/gos7"
 )
 
 const (

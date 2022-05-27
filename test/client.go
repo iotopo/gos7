@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"../../gos7"
+	"github.com/iotopo/gos7"
 )
 
 //ClientTestAll client test all
