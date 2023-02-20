@@ -44,12 +44,13 @@ func NewTCPClientHandler(address string, rack int, slot int) *TCPClientHandler {
 	h.Timeout = tcpTimeout
 	h.IdleTimeout = tcpIdleTimeout
 	h.ConnectionType = connectionTypePG // Connect to the PLC as a PG
+	h.PDUSizeRequested = pduSizeRequested
 	remoteTSAP := uint16(h.ConnectionType)<<8 + (uint16(rack) * 0x20) + uint16(slot)
 	h.setConnectionParameters(address, 0x0100, remoteTSAP)
 	return h
 }
 
-//TCPClient creator for a TCP client with address, rack and slot, implement from interface client
+// TCPClient creator for a TCP client with address, rack and slot, implement from interface client
 func TCPClient(address string, rack int, slot int) Client {
 	handler := NewTCPClientHandler(address, rack, slot)
 	return NewClient(handler)
@@ -85,7 +86,8 @@ type tcpTransporter struct {
 	ConnectionType                int
 	LastPDUType                   byte
 
-	PDULength int
+	PDULength        int
+	PDUSizeRequested int // 120, 240, 480
 }
 
 func (mb *tcpTransporter) setConnectionParameters(address string, localTSAP uint16, remoteTSAP uint16) {
@@ -122,7 +124,7 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 		return
 	}
 	// Send data
-	mb.logf("s7: sending % x", request)
+	mb.logf(">> % x", request)
 	if _, err = mb.conn.Write(request); err != nil {
 		return
 	}
@@ -143,8 +145,8 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 				return
 			}
 		} else {
-			if length > pduSizeRequested+isoHSize || length < minPduSize {
-				err = fmt.Errorf("s7: invalid pdu")
+			if length > mb.PDUSizeRequested+isoHSize || length < minPduSize {
+				err = fmt.Errorf("invalid pdu")
 				return
 			}
 			done = true
@@ -162,7 +164,7 @@ func (mb *tcpTransporter) Send(request []byte) (response []byte, err error) {
 		return
 	}
 	response = data[0:length]
-	mb.logf("s7: received % x\n", response)
+	mb.logf("<< % x\n", response)
 	return
 }
 
@@ -226,9 +228,12 @@ func (mb *tcpTransporter) negotiatePduLength() error {
 	// Set PDU Size Requested //lth
 	pduSizePackage := make([]byte, len(s7PDUNegogiationTelegram))
 	copy(pduSizePackage, s7PDUNegogiationTelegram)
-	binary.BigEndian.PutUint16(pduSizePackage[23:], uint16(pduSizeRequested))
+	binary.BigEndian.PutUint16(pduSizePackage[23:], uint16(mb.PDUSizeRequested))
 	// Sends the connection request telegram
 	response, err := mb.Send(pduSizePackage)
+	if err != nil {
+		return err
+	}
 	length := len(response)
 	if length == 27 && response[17] == 0 && response[18] == 0 { // 20 = size of Negotiate Answer
 		// Get PDU Size Negotiated
@@ -307,7 +312,7 @@ func (mb *tcpTransporter) closeIdle() {
 	}
 }
 
-//reserve for future use, need to verify the request and response
+// reserve for future use, need to verify the request and response
 func (mb *tcpPackager) Verify(request []byte, response []byte) (err error) {
 	return
 }

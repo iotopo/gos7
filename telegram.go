@@ -36,7 +36,13 @@ var tpktISOTelegram = []byte{ // 7 bytes
 	3, 0,
 	0, 31, // Telegram Length (Data Size + 31 or 35)
 	2, 240, 128} // COTP (see above for info)
+
 // S7 PDU Negotiation Telegram (contains also ISO Header and COTP Header)
+// 报文：
+// 03 00 00 19 
+// 02 f0 80 
+// 32 01 00 00 04 00 00 08 00 00 f0 00 00 01 00 01 
+// 01 e0
 var s7PDUNegogiationTelegram = []byte{
 	3, 0, 0, 25,
 	2, 240, 128, // TPKT + COTP (see above for info)
