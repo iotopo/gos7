@@ -41,6 +41,7 @@ type TCPClientHandler struct {
 func NewTCPClientHandler(address string, rack int, slot int) *TCPClientHandler {
 	h := &TCPClientHandler{}
 	h.Address = address
+	h.ConnectTimeout = tcpTimeout
 	h.Timeout = tcpTimeout
 	h.IdleTimeout = tcpIdleTimeout
 	// h.ConnectionType = connectionTypePG // Connect to the PLC as a PG
@@ -66,8 +67,9 @@ type tcpPackager struct {
 // tcpTransporter implements Transporter interface.
 type tcpTransporter struct {
 	// Connect string
-	Address string
-	// Connect & Read timeout
+	Address        string
+	ConnectTimeout time.Duration
+	// Read timeout
 	Timeout time.Duration
 	// Idle timeout to close the connection
 	IdleTimeout time.Duration
@@ -181,7 +183,7 @@ func (mb *tcpTransporter) tcpConnect() error {
 	mb.mu.Lock()
 	defer mb.mu.Unlock()
 	if mb.conn == nil {
-		dialer := net.Dialer{Timeout: mb.Timeout}
+		dialer := net.Dialer{Timeout: mb.ConnectTimeout}
 		conn, err := dialer.Dial("tcp", mb.Address)
 		if err != nil {
 			return err
